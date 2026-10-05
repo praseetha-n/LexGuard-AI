@@ -17,16 +17,15 @@ retriever = HybridRetriever()
 @router.post("/process", response_model=RetrievalOutput)
 def process_query(request: QueryOutput):
 
-    # Combine the query with keywords from the Query Agent.
-    # legal_area is kept as part of the request contract and
-    # can be used for filtering/ranking later if required.
-    retrieval_query = request.query
+    # Combine the original query with keywords
+    # to give the retriever more information.
+    enhanced_query = request.query
 
     if request.keywords:
-        retrieval_query += " " + " ".join(request.keywords)
+        enhanced_query += " " + " ".join(request.keywords)
 
     results = retriever.search(
-        retrieval_query,
+        enhanced_query,
         top_k=5
     )
 

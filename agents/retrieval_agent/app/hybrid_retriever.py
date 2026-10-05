@@ -55,14 +55,16 @@ class HybridRetriever:
     ):
 
         # Get results from both retrievers
+        candidate_k = max(top_k * 2, 10)
+
         bm25_results = self.bm25.search(
             query,
-            top_k=top_k
+            top_k=candidate_k
         )
 
         semantic_results = self.semantic.search(
             query,
-            top_k=top_k
+            top_k=candidate_k
         )
 
         # Normalize BM25 scores
