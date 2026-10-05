@@ -12,6 +12,9 @@ class HybridRetriever:
         self.bm25_weight = bm25_weight
         self.semantic_weight = semantic_weight
 
+        self.min_bm25_score = 3.0
+        self.min_semantic_score = 0.30
+
         print("Loading BM25 retriever...")
         self.bm25 = BM25Retriever()
 
@@ -23,6 +26,7 @@ class HybridRetriever:
         """
         Normalize scores to the range 0-1 using min-max normalization.
         """
+
         if not results:
             return results
 
@@ -36,11 +40,14 @@ class HybridRetriever:
 
         # Avoid division by zero
         if max_score == min_score:
+
             for result in results:
                 result[f"normalized_{score_key}"] = 1.0
+
             return results
 
         for result in results:
+
             result[f"normalized_{score_key}"] = (
                 (result[score_key] - min_score)
                 / (max_score - min_score)
@@ -51,10 +58,11 @@ class HybridRetriever:
     def search(
         self,
         query: str,
-        top_k: int = 5
+        top_k: int = 5,
+        min_score: float = 0.55
     ):
 
-        # Get results from both retrievers
+        # Get more candidates from both retrievers
         candidate_k = max(top_k * 2, 10)
 
         bm25_results = self.bm25.search(
@@ -66,6 +74,19 @@ class HybridRetriever:
             query,
             top_k=candidate_k
         )
+
+        # -----------------------------
+        # Semantic relevance gate
+        # -----------------------------
+        if semantic_results:
+            best_semantic_score = max(r["score"] for r in semantic_results)
+            print(f"Best semantic score: {best_semantic_score:.4f}")
+
+            if best_semantic_score < 0.20:
+                return []
+        else:
+            print("Best semantic score: 0.0000")
+            return []
 
         # Normalize BM25 scores
         bm25_results = self.normalize_scores(
@@ -82,7 +103,9 @@ class HybridRetriever:
         # Store combined results
         combined = {}
 
-        # Add BM25 results
+        # -----------------------------
+        # BM25 results
+        # -----------------------------
         for result in bm25_results:
 
             chunk_id = (
@@ -98,10 +121,12 @@ class HybridRetriever:
                 "semantic_score": 0.0,
                 "normalized_bm25_score":
                     result["normalized_score"],
-                "normalized_semantic_score": 0.0,
+                "normalized_semantic_score": 0.0
             }
 
-        # Add semantic results
+        # -----------------------------
+        # Semantic results
+        # -----------------------------
         for result in semantic_results:
 
             chunk_id = (
@@ -119,7 +144,7 @@ class HybridRetriever:
                     "semantic_score": result["score"],
                     "normalized_bm25_score": 0.0,
                     "normalized_semantic_score":
-                        result["normalized_score"],
+                        result["normalized_score"]
                 }
 
             else:
@@ -130,7 +155,9 @@ class HybridRetriever:
                     "normalized_semantic_score"
                 ] = result["normalized_score"]
 
-        # Calculate normalized hybrid score
+        # -----------------------------
+        # Calculate hybrid score
+        # -----------------------------
         results = []
 
         for result in combined.values():
@@ -147,10 +174,38 @@ class HybridRetriever:
 
             results.append(result)
 
-        # Sort by hybrid score
+        # -----------------------------
+        # Sort
+        # -----------------------------
         results.sort(
             key=lambda x: x["score"],
             reverse=True
         )
 
-        return results[:top_k]
+        # -----------------------------
+        # Apply relevance threshold
+        # -----------------------------
+        filtered_results = []
+
+        for result in results:
+
+            has_bm25_evidence = (
+                result["bm25_score"] >= self.min_bm25_score
+            )
+
+            has_semantic_evidence = (
+                result["semantic_score"] >= self.min_semantic_score
+            )
+
+            has_hybrid_evidence = (
+                result["score"] >= min_score
+            )
+
+            if (
+                has_hybrid_evidence
+                and
+                (has_bm25_evidence or has_semantic_evidence)
+            ):
+                filtered_results.append(result)
+
+        return filtered_results[:top_k]

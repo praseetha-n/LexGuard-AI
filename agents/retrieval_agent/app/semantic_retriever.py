@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import numpy as np
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -13,6 +14,14 @@ CHUNKS_FILE = (
     / "processed"
     / "chunks"
     / "legal_chunks.json"
+)
+
+EMBEDDINGS_FILE = (
+    PROJECT_ROOT
+    / "data"
+    / "processed"
+    / "chunks"
+    / "legal_chunks_embeddings.npy"
 )
 
 
@@ -36,21 +45,28 @@ class SemanticRetriever:
             "all-MiniLM-L6-v2"
         )
 
-        # Create embeddings for all passages
-        print(
-            f"Creating embeddings for "
-            f"{len(self.documents)} chunks..."
-        )
+        if EMBEDDINGS_FILE.exists():
+            print("Loading existing chunk embeddings...")
+            self.embeddings = np.load(EMBEDDINGS_FILE)
+        else:
+            # Create embeddings for all passages
+            print(
+                f"Creating embeddings for "
+                f"{len(self.documents)} chunks..."
+            )
 
-        passages = [
-            document["passage"]
-            for document in self.documents
-        ]
+            passages = [
+                document["passage"]
+                for document in self.documents
+            ]
 
-        self.embeddings = self.model.encode(
-            passages,
-            convert_to_numpy=True
-        )
+            self.embeddings = self.model.encode(
+                passages,
+                convert_to_numpy=True
+            )
+
+            print("Saving chunk embeddings to disk...")
+            np.save(EMBEDDINGS_FILE, self.embeddings)
 
         print(
             f"Semantic index loaded: "
