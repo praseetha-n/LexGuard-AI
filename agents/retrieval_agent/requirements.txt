@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+rank-bm25==0.2.2
+pypdf==6.19.0
+sentence-transformers
+scikit-learn
