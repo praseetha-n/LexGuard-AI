@@ -3,7 +3,7 @@ import React from 'react';
 const SUGGESTED_QUESTIONS = [
   'Can an employer terminate an employee without notice?',
   'What are the requirements for termination?',
-  'What rights does an employee have after termination?',
+  'What happens if an employer terminates an employee in violation of the Termination Act?',
   'What notice is required for termination?'
 ];
 
