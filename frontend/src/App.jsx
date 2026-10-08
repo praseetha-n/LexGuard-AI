@@ -16,6 +16,7 @@ import Header from './components/Header';
 import QueryInput from './components/QueryInput';
 import LoadingState from './components/LoadingState';
 import EmptyState from './components/EmptyState';
+import QueryIntelligenceCard from './components/QueryIntelligenceCard';
 import AnswerCard from './components/AnswerCard';
 import VerificationStatus from './components/VerificationStatus';
 import WarningCard from './components/WarningCard';
@@ -499,6 +500,11 @@ function LexGuardChatView() {
                   </button>
                 </div>
               </div>
+
+              {/* Query Intelligence (Query Agent Analysis) */}
+              {response.query_analysis && (
+                <QueryIntelligenceCard queryAnalysis={response.query_analysis} />
+              )}
 
               {/* Synthesized Legal Answer */}
               <AnswerCard
