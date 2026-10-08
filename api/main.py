@@ -18,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+QUERY_AGENT_URL = "http://127.0.0.1:8001"
 RETRIEVAL_AGENT_URL = "http://127.0.0.1:8002"
 VERIFICATION_AGENT_URL = "http://127.0.0.1:8004"
 
@@ -43,14 +44,32 @@ async def ask_question(request: dict):
     async with httpx.AsyncClient() as client:
 
         # --------------------------------------------------
-        # 1. Retrieve legal evidence
+        # 1. Analyze the user's query using Query Agent
+        # --------------------------------------------------
+        query_response = await client.post(
+            f"{QUERY_AGENT_URL}/analyze",
+            json={
+                "query": query
+            }
+        )
+
+        if query_response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail="Query Agent failed"
+            )
+
+        query_data = query_response.json()
+
+        # --------------------------------------------------
+        # 2. Retrieve legal evidence
         # --------------------------------------------------
         retrieval_response = await client.post(
             f"{RETRIEVAL_AGENT_URL}/process",
             json={
-                "query": query,
-                "legal_area": "employment",
-                "keywords": query.split()
+                "query": query_data["query"],
+                "legal_area": query_data["legal_area"],
+                "keywords": query_data["keywords"]
             }
         )
 
@@ -65,7 +84,7 @@ async def ask_question(request: dict):
         documents = retrieval_data["documents"]
 
         # --------------------------------------------------
-        # 2. Temporary explanation output
+        # 3. Temporary explanation output
         # --------------------------------------------------
         # The real Explanation Agent will replace this later.
         answer = (
@@ -85,12 +104,12 @@ async def ask_question(request: dict):
             )
 
         # --------------------------------------------------
-        # 3. Verify the answer and citations
+        # 4. Verify the answer and citations
         # --------------------------------------------------
         verification_response = await client.post(
             f"{VERIFICATION_AGENT_URL}/verify",
             json={
-                "query": query,
+                "query": query_data["query"],
                 "answer": answer,
                 "citations": citations,
                 "retrieved_documents": documents
@@ -106,6 +125,15 @@ async def ask_question(request: dict):
         verification_data = verification_response.json()
 
         # --------------------------------------------------
-        # 4. Return final result
+        # 5. Add Query Agent output for frontend visibility
+        # --------------------------------------------------
+        verification_data["query_analysis"] = {
+            "query": query_data["query"],
+            "legal_area": query_data["legal_area"],
+            "keywords": query_data["keywords"]
+        }
+
+        # --------------------------------------------------
+        # 6. Return final result
         # --------------------------------------------------
         return verification_data
