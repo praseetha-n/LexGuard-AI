@@ -32,27 +32,30 @@ function SingleSourceCard({ source, index }) {
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
           </div>
-          <div>
+          <div className="source-heading-content">
             <h4 className="source-title">{title}</h4>
-            <div className="source-meta-row">
-              <span className="source-meta-item">
-                <span className="meta-label">Document ID:</span>
-                <code className="meta-code">{documentId}</code>
-              </span>
-              {formattedScore && (
-                <span className="source-score-badge" title="Algorithmic retrieval relevance score">
-                  <span className="score-bullet">●</span>
-                  <span>Relevance: {formattedScore}</span>
+            <details className="source-details">
+              <summary>Source details</summary>
+              <div className="source-meta-row">
+                <span className="source-meta-item">
+                  <span className="meta-label">Document ID:</span>
+                  <code className="meta-code">{documentId}</code>
                 </span>
-              )}
-            </div>
+                {formattedScore && (
+                  <span className="source-score-badge" title="Algorithmic retrieval relevance score">
+                    <span className="score-bullet">●</span>
+                    <span>Relevance: {formattedScore}</span>
+                  </span>
+                )}
+              </div>
+            </details>
           </div>
         </div>
       </div>
 
       <div className="source-evidence-block">
         <div className="evidence-label-row">
-          <span className="evidence-section-label">Retrieved Evidence Passage:</span>
+          <span className="evidence-section-label">Relevant passage</span>
         </div>
         <blockquote className="evidence-quote">
           "{displayPassage}"
@@ -115,10 +118,10 @@ export default function EvidenceCard({ documents, verifiedClaims }) {
       <section className="sources-section" aria-labelledby="sources-section-title">
         <div className="section-header">
           <h3 id="sources-section-title" className="section-title">
-            Legal Sources & Evidence
+            Legal Sources
           </h3>
           <p className="section-subtitle">
-            Transparency records for retrieved statutory texts and case authorities.
+            Supporting legal authorities related to this question.
           </p>
         </div>
         <div className="empty-substate empty-substate--sources">
@@ -130,10 +133,9 @@ export default function EvidenceCard({ documents, verifiedClaims }) {
             </svg>
           </div>
           <div>
-            <h4 className="empty-substate-heading">No retrieved documents returned</h4>
+            <h4 className="empty-substate-heading">No sources available</h4>
             <p className="empty-substate-text">
-              The retrieval agent did not match specific statutory passages for this query. 
-              The response was synthesized using baseline statutory principles without cited passages.
+              No specific legal passages were found for this question. Review the answer with caution and seek corroborating legal sources.
             </p>
           </div>
         </div>
@@ -147,10 +149,10 @@ export default function EvidenceCard({ documents, verifiedClaims }) {
         <div className="section-header-row">
           <div>
             <h3 id="sources-section-title" className="section-title">
-              Retrieved Legal Sources & Evidence
+              Legal Sources
             </h3>
             <p className="section-subtitle">
-              Source transparency: Direct legal citations retrieved and analyzed by the multi-agent system.
+              Relevant legal documents and supporting passages.
             </p>
           </div>
           <div className="sources-count-badge">

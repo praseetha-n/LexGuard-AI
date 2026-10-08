@@ -501,36 +501,37 @@ function LexGuardChatView() {
                 </div>
               </div>
 
-              {/* Query Intelligence (Query Agent Analysis) */}
-              {response.query_analysis && (
-                <QueryIntelligenceCard queryAnalysis={response.query_analysis} />
-              )}
+              <div className="result-question">
+                <p className="result-question-label">Your question</p>
+                <p className="result-question-text">{submittedQuery || response.query}</p>
+              </div>
 
-              {/* Synthesized Legal Answer */}
               <AnswerCard
                 answer={response.answer}
-                query={submittedQuery || response.query}
               />
 
-              {/* Verification Status & Conflict Notice */}
-              <VerificationStatus
-                evidenceSufficient={response.evidence_sufficient}
-                conflictingSources={response.conflicting_sources}
-              />
-
-              {/* Backend Advisory Warning (only rendered if non-null) */}
               <WarningCard warning={response.warning} />
 
-              {/* Verified Claims Breakdown */}
-              <VerifiedClaims claims={response.verified_claims} />
-
-              {/* Retrieved Source Documents and Evidence Passages */}
               <EvidenceCard
                 documents={response.retrieved_documents || response.documents || response.sources}
                 verifiedClaims={response.verified_claims}
               />
 
-              {/* Visible In-Flow Legal Disclaimer */}
+              <VerificationStatus
+                evidenceSufficient={response.evidence_sufficient}
+                conflictingSources={response.conflicting_sources}
+              />
+
+              <details className="result-details">
+                <summary>Verification and research details</summary>
+                <div className="result-details-content">
+                  <VerifiedClaims claims={response.verified_claims} />
+                  {response.query_analysis && (
+                    <QueryIntelligenceCard queryAnalysis={response.query_analysis} />
+                  )}
+                </div>
+              </details>
+
               <Disclaimer />
             </section>
           )}
