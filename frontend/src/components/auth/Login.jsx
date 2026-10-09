@@ -52,10 +52,11 @@ export default function Login() {
     <AuthLayout
       title="Sign In to LexGuard AI"
       subtitle="Access evidence-verified legal research and verification services"
+      badgeText="AI-Powered Legal Research Assistant"
     >
       {error && (
         <div className="auth-alert auth-alert--error" role="alert">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -130,7 +131,13 @@ export default function Login() {
               <span>Signing In...</span>
             </span>
           ) : (
-            'Sign In'
+            <span className="auth-submit-btn-content">
+              <span>Sign In</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
           )}
         </button>
       </form>
