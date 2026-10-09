@@ -1,0 +1,141 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import httpx
+
+app = FastAPI(
+    title="LexGuard AI - Orchestrator",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+QUERY_AGENT_URL = "http://127.0.0.1:8001"
+RETRIEVAL_AGENT_URL = "http://127.0.0.1:8002"
+VERIFICATION_AGENT_URL = "http://127.0.0.1:8004"
+EXPLANATION_AGENT_URL = "http://127.0.0.1:8003"
+
+@app.get("/health")
+def health_check():
+    return {
+        "service": "orchestrator",
+        "status": "healthy"
+    }
+
+
+@app.post("/ask")
+async def ask_question(request: dict):
+    query = request.get("query")
+
+    if not query:
+        raise HTTPException(
+            status_code=400,
+            detail="Query is required"
+        )
+
+    async with httpx.AsyncClient() as client:
+
+        # --------------------------------------------------
+        # 1. Analyze the user's query using Query Agent
+        # --------------------------------------------------
+        query_response = await client.post(
+            f"{QUERY_AGENT_URL}/analyze",
+            json={
+                "query": query
+            }
+        )
+
+        if query_response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail="Query Agent failed"
+            )
+
+        query_data = query_response.json()
+
+        # --------------------------------------------------
+        # 2. Retrieve legal evidence
+        # --------------------------------------------------
+        retrieval_response = await client.post(
+            f"{RETRIEVAL_AGENT_URL}/process",
+            json={
+                "query": query_data["query"],
+                "legal_area": query_data["legal_area"],
+                "keywords": query_data["keywords"]
+            }
+        )
+
+        if retrieval_response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail="Retrieval Agent failed"
+            )
+
+        retrieval_data = retrieval_response.json()
+
+        documents = retrieval_data["documents"]
+
+        # --------------------------------------------------
+        # 3. Generate grounded explanation
+        # --------------------------------------------------
+        explanation_response = await client.post(
+    f"{EXPLANATION_AGENT_URL}/process-for-verification",
+    json={
+        "query": retrieval_data["query"],
+        "documents": documents
+    },
+    timeout=120.0
+)
+
+        if explanation_response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail="Explanation Agent failed"
+            )
+
+        explanation_data = explanation_response.json()
+
+        answer = explanation_data["answer"]
+        citations = explanation_data["citations"]
+        # --------------------------------------------------
+        # 4. Verify the answer and citations
+        # --------------------------------------------------
+        verification_response = await client.post(
+            f"{VERIFICATION_AGENT_URL}/verify",
+            json={
+                "query": query_data["query"],
+                "answer": answer,
+                "citations": citations,
+                "retrieved_documents": documents
+            }
+        )
+
+        if verification_response.status_code != 200:
+            raise HTTPException(
+                status_code=502,
+                detail="Verification Agent failed"
+            )
+
+        verification_data = verification_response.json()
+
+        # --------------------------------------------------
+        # 5. Add Query Agent output for frontend visibility
+        # --------------------------------------------------
+        verification_data["query_analysis"] = {
+            "query": query_data["query"],
+            "legal_area": query_data["legal_area"],
+            "keywords": query_data["keywords"]
+        }
+
+        # --------------------------------------------------
+        # 6. Return final result
+        # --------------------------------------------------
+        return verification_data
