@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, HTTPException
 
 from shared.schemas.retrieval_output import RetrievalOutput
@@ -9,6 +10,7 @@ from agents.explanation_agent.app.verification_ready_output import (
     VerificationReadyOutput
 )
 
+logger = logging.getLogger("explanation_agent")
 
 router = APIRouter()
 
@@ -25,6 +27,7 @@ def process_retrieval(
         return generate_explanation(request)
 
     except Exception as error:
+        logger.exception("Explanation generation failed: %s", error)
         raise HTTPException(
             status_code=500,
             detail=f"Explanation generation failed: {str(error)}"
@@ -50,6 +53,7 @@ def process_for_verification(
         )
 
     except Exception as error:
+        logger.exception("Explanation generation for verification failed: %s", error)
         raise HTTPException(
             status_code=500,
             detail=f"Explanation generation failed: {str(error)}"
