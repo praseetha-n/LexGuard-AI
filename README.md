@@ -160,7 +160,7 @@ Ensure you have the following installed on your system:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/praseethanethranjanalahandasinghe/LexGuard-AI.git
+https://github.com/praseetha-n/LexGuard-AI.git
 cd LexGuard-AI
 ```
 
